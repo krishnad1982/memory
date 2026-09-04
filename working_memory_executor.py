@@ -1,11 +1,18 @@
+import asyncio
+
 from travel_model import TripState
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from agent_framework import Workflow, WorkflowContext, Executor, handler
+from agent_framework import (
+    WorkflowContext,
+    Executor,
+    handler,
+    WorkflowBuilder,
+)
 
 
-class TripRequestExecutor(Executor):
+class TravelExecutor(Executor):
     def __init__(self) -> None:
         super().__init__(id="trip_request")
 
@@ -22,7 +29,7 @@ class TripRequestExecutor(Executor):
         await ctx.send_message("SEARCH_FLIGHT")
 
 
-class FlightSearchExecutor(Executor):
+class FlightExecutor(Executor):
     def __init__(self) -> None:
         super().__init__(id="flight_search")
 
@@ -46,14 +53,11 @@ class PolicyExecutor(Executor):
             raise ValueError("Flight price must exist before policy check.")
         trip_state.policy_checked = True
         trip_state.policy_compliant = trip_state.flight_price <= 400
-        if not trip_state.policy_compliant:
-            trip_state.approval_required = True
-            trip_state.approval_status = "pending"
         ctx.set_state("trip_state", trip_state)
         await ctx.send_message("COMPLETE")
 
 
-class CompleteExecutor(Executor):
+class ResultExecutor(Executor):
     def __init__(self) -> None:
         super().__init__(id="complete")
 
@@ -61,3 +65,33 @@ class CompleteExecutor(Executor):
     async def handle(self, message: str, ctx: WorkflowContext[None, TripState]):
         trip_state: TripState = ctx.get_state("trip_state")
         await ctx.yield_output(trip_state)
+
+
+async def main():
+    travel_executor = TravelExecutor()
+    flight_executor = FlightExecutor()
+    policy_executor = PolicyExecutor()
+    result_executor = ResultExecutor()
+
+    builder = WorkflowBuilder(
+        start_executor=travel_executor,
+    )
+
+    builder.add_edge(travel_executor, flight_executor)
+    builder.add_edge(flight_executor, policy_executor)
+    builder.add_edge(policy_executor, result_executor)
+    workflow = builder.build()
+    request = {
+        "origin": "sydney",
+        "destination": "melbourne",
+        "travel_date": "15-10-2026",
+    }
+    async for event in workflow.run(message=request, stream=True):
+        # print(event) enable this line to see the events in the workflow
+        if event.type == "output":
+            trip_state: TripState = event.data
+            print("Final Trip State:")
+            print(trip_state)
+
+
+asyncio.run(main())
