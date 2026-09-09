@@ -1,0 +1,80 @@
+{
+  "dccb6fd1-97dc-4cb0-9c29-da5104056875": {
+    "trip": {
+      "origin": "sydney",
+      "destination": "melbourne",
+      "travel_date": "2026-10-15 00:00:00+11:00"
+    },
+    "interactions": [
+      {
+        "timestamp": "2026-09-09T06:53:54.892351+10:00",
+        "event_type": "trip_requested",
+        "details": {
+          "status": "received"
+        }
+      },
+      {
+        "timestamp": "2026-09-09T06:53:54.969808+10:00",
+        "event_type": "flight_selected",
+        "details": {
+          "flight_number": "QF421",
+          "price": 500.0
+        }
+      },
+      {
+        "timestamp": "2026-09-09T06:53:55.057808+10:00",
+        "event_type": "policy_checked",
+        "details": {
+          "policy_checked": true,
+          "policy_compliant": false
+        }
+      },
+      {
+        "timestamp": "2026-09-09T06:53:55.140029+10:00",
+        "event_type": "trip_completed",
+        "details": {
+          "status": "completed"
+        }
+      }
+    ]
+  },
+  "10b424ec-429c-421d-b3c7-5ff7e5fa13a2": {
+    "trip": {
+      "origin": "sydney",
+      "destination": "singapore",
+      "travel_date": "2026-11-30 00:00:00+11:00"
+    },
+    "interactions": [
+      {
+        "timestamp": "2026-09-09T06:54:55.458425+10:00",
+        "event_type": "trip_requested",
+        "details": {
+          "status": "received"
+        }
+      },
+      {
+        "timestamp": "2026-09-09T06:54:55.546360+10:00",
+        "event_type": "flight_selected",
+        "details": {
+          "flight_number": "QF421",
+          "price": 500.0
+        }
+      },
+      {
+        "timestamp": "2026-09-09T06:54:55.607598+10:00",
+        "event_type": "policy_checked",
+        "details": {
+          "policy_checked": true,
+          "policy_compliant": false
+        }
+      },
+      {
+        "timestamp": "2026-09-09T06:54:55.694043+10:00",
+        "event_type": "trip_completed",
+        "details": {
+          "status": "completed"
+        }
+      }
+    ]
+  }
+}

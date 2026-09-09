@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 
 from travel_model import TripState
 from datetime import datetime
@@ -11,6 +12,8 @@ from agent_framework import (
     WorkflowBuilder,
 )
 
+from interaction_memory import create_trip, add_interaction
+
 
 class TravelExecutor(Executor):
     def __init__(self) -> None:
@@ -18,12 +21,29 @@ class TravelExecutor(Executor):
 
     @handler
     async def handle(self, request: dict, ctx: WorkflowContext[str]):
+        trip_id = str(uuid.uuid4())
         user_date = datetime.strptime(request["travel_date"], "%d-%m-%Y")
         zone_date = user_date.replace(tzinfo=ZoneInfo("Australia/Sydney"))
         trip_state = TripState(
+            trip_id=trip_id,
             origin=request["origin"],
             destination=request["destination"],
             travel_date=zone_date,
+        )
+        create_trip(
+            trip_id,
+            {
+                "origin": request["origin"],
+                "destination": request["destination"],
+                "travel_date": zone_date,
+            },
+        )
+        add_interaction(
+            trip_id,
+            event_type="trip_requested",
+            details={
+                "status": "received",
+            },
         )
         ctx.set_state("trip_state", trip_state)
         await ctx.send_message("SEARCH_FLIGHT")
@@ -39,6 +59,15 @@ class FlightExecutor(Executor):
         trip_state.selected_flight = "QF421"
         trip_state.flight_price = 500.00
         ctx.set_state("trip_state", trip_state)
+
+        add_interaction(
+            trip_state.trip_id,
+            event_type="flight_selected",
+            details={
+                "flight_number": trip_state.selected_flight,
+                "price": trip_state.flight_price,
+            },
+        )
         await ctx.send_message("CHECK_POLICY")
 
 
@@ -54,6 +83,15 @@ class PolicyExecutor(Executor):
         trip_state.policy_checked = True
         trip_state.policy_compliant = trip_state.flight_price <= 400
         ctx.set_state("trip_state", trip_state)
+
+        add_interaction(
+            trip_state.trip_id,
+            event_type="policy_checked",
+            details={
+                "policy_checked": trip_state.policy_checked,
+                "policy_compliant": trip_state.policy_compliant,
+            },
+        )
         await ctx.send_message("COMPLETE")
 
 
@@ -64,6 +102,13 @@ class ResultExecutor(Executor):
     @handler
     async def handle(self, message: str, ctx: WorkflowContext[None, TripState]):
         trip_state: TripState = ctx.get_state("trip_state")
+
+        add_interaction(
+            trip_state.trip_id,
+            event_type="trip_completed",
+            details={"status": "completed"},
+        )
+
         await ctx.yield_output(trip_state)
 
 
@@ -83,8 +128,8 @@ async def main():
     workflow = builder.build()
     request = {
         "origin": "sydney",
-        "destination": "melbourne",
-        "travel_date": "15-10-2026",
+        "destination": "singapore",
+        "travel_date": "30-11-2026",
     }
     async for event in workflow.run(message=request, stream=True):
         # print(event) enable this line to see the events in the workflow

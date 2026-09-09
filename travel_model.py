@@ -5,6 +5,7 @@ from typing import Optional
 
 @dataclass
 class TripState:
+    trip_id: str
     origin: str
     destination: str
     travel_date: datetime
