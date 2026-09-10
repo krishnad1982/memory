@@ -128,8 +128,8 @@ async def main():
     workflow = builder.build()
     request = {
         "origin": "sydney",
-        "destination": "singapore",
-        "travel_date": "30-11-2026",
+        "destination": "usa",
+        "travel_date": "10-11-2026",
     }
     async for event in workflow.run(message=request, stream=True):
         # print(event) enable this line to see the events in the workflow

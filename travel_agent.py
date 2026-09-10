@@ -3,7 +3,7 @@ import asyncio
 from agent_framework import Agent, InMemoryHistoryProvider
 
 from core import get_chat_client
-from travel_tools import get_previous_trip
+from travel_tools import get_previous_trip, get_user_profile, save_user_preference
 
 
 async def main():
@@ -13,54 +13,54 @@ async def main():
         name="TravelMate",
         instructions="""
             You are a corporate travel assistant.
-
             Help the user plan business trips.
-
             Ask for missing information rather than inventing it.
 
-            If the user asks about a previous trip,
-            retrieve the relevant interaction history using
-            the available tool.
+            If the user asks about previous trips,
+            use the interaction-history tool.
+
+            If the user explicitly asks you to remember
+            a durable travel preference,
+            use save_user_preference.
+
+            If stored user preferences are relevant
+            to the current request,
+            use get_user_profile.
             """,
         context_providers=[InMemoryHistoryProvider()],
-        tools=[
-            get_previous_trip,
-        ],
+        tools=[get_previous_trip, get_user_profile, save_user_preference],
     )
 
     session = agent.create_session()
+    session.state["user_id"] = "123"
+
+    while True:
+        user_input = input("\nUser: ")
+        if user_input.lower() in ("exit", "quit"):
+            break
+        response = await agent.run(
+            user_input,
+            session=session,
+        )
+        print(f"\nAgent: {response.text}")
 
     # -------------------------------------------------
     # SESSION MEMORY TEST
     # -------------------------------------------------
-
-    response1 = await agent.run(
-        "I want to travel from Sydney to Melbourne.",
-        session=session,
-    )
-
-    print("Turn 1:")
-    print(response1.text)
-
-    response2 = await agent.run(
-        "15 October 2026.",
-        session=session,
-    )
-
-    print("\nTurn 2:")
-    print(response2.text)
+    # I want to travel from Sydney to Melbourne.
+    # 15 October 2026.
 
     # -------------------------------------------------
     # INTERACTION MEMORY RETRIEVAL TEST
     # -------------------------------------------------
+    # What happened on my previous Melbourne trip?
 
-    response3 = await agent.run(
-        "What happened on my previous Melbourne trip?",
-        session=session,
-    )
-
-    print("\nInteraction Memory:")
-    print(response3.text)
+    # -------------------------------------------------
+    # USER PROFILE MEMORY
+    # -------------------------------------------------
+    # Remember that my preferred airline is Qantas.
+    # Remember that I prefer aisle seats.
+    # Restart the program and ask: What are my travel preferences?
 
     # -------------------------------------------------
     # INSPECT SESSION MEMORY
